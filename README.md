@@ -4,23 +4,7 @@
 - **Role:** Principal Architect — Agentic AI & Data Platform
 - **Created:** 2026-10-17 · **Updated:** 2026-10-18
 
-I validate architecture through runnable code, explicit contracts, and behavioral
-proofs. This implementation uses Go; the sibling implementation uses Python.
-
-A native Go port of [Agentic Salmon Python](https://github.com/aixstudio/agentic-salmon-python),
-showing how evidence, ontology, retrieval, and human authority constrain agent action.
-
-```text
-GUARD ⊣ [PERCEIVE → CONNECT → REASON → REVIEW → ACT → LEARN]
-```
-
-All six agents execute typed contracts. Reason queries a small reviewed corpus
-through the **official MCP Go SDK over stdio**. Review pauses the workflow;
-Act requires a supported or plausible working hypothesis, explicit acceptance
-of uncertainty, and authorization for bounded cited guidance. Learn preserves
-outcome and preference evidence without weakening policy.
-
-![Reviewed pre-cook input](docs/assets/salmon-pre-cook-input.jpeg)
+Agentic Salmon demonstrates how an agentic system moves from uncertain evidence to human-approved guidance. Its architecture separates agent responsibilities, Guard authority, and workflow execution.
 
 ## Architecture at a Glance
 
@@ -28,15 +12,15 @@ Read the three bands from top to bottom: Guard defines authority, the six
 agents own judgments, and the Go runtime schedules and persists execution.
 
 ```mermaid
-%%{init: {"theme":"dark","themeVariables":{"fontSize":"22px","primaryTextColor":"#F8FAFC","lineColor":"#94A3B8","clusterBkg":"#111827","clusterBorder":"#475569","edgeLabelBackground":"#111827"},"flowchart":{"nodeSpacing":32,"rankSpacing":52,"htmlLabels":true,"curve":"basis"}}}%%
+%%{init: {"theme":"dark","themeVariables":{"fontSize":"30px","primaryTextColor":"#F8FAFC","lineColor":"#94A3B8","clusterBkg":"#111827","clusterBorder":"#475569","edgeLabelBackground":"#111827"},"flowchart":{"nodeSpacing":22,"rankSpacing":24,"padding":10,"wrappingWidth":180,"htmlLabels":true,"curve":"basis"}}}%%
 flowchart TB
     subgraph GUARD_BAND[" "]
         direction TB
         subgraph GUARD_ROW[" "]
             direction LR
-            G["<span style='font-size:32px'><b>GUARD</b></span><br/><span style='font-size:20px'>governs every transition</span>"]
-            TP["<span style='font-size:24px'><b>Transition Policy</b></span><br/><span style='font-size:18px'>what may advance</span>"]
-            AE["<span style='font-size:24px'><b>Authority Envelope</b></span><br/><span style='font-size:18px'>what may be released</span>"]
+            G["<span style='font-size:40px'><b>GUARD</b></span><br/><span style='font-size:28px'>governs every<br/>transition</span>"]
+            TP["<span style='font-size:32px'><b>Transition<br/>Policy</b></span><br/><span style='font-size:26px'>what may<br/>advance</span>"]
+            AE["<span style='font-size:32px'><b>Authority<br/>Envelope</b></span><br/><span style='font-size:26px'>what may be<br/>released</span>"]
             G ==> TP ==> AE
         end
     end
@@ -45,15 +29,15 @@ flowchart TB
         direction TB
         subgraph AGENT_ROW[" "]
             direction LR
-            LOOP["<span style='font-size:30px'><b>AGENTIC LOOP</b></span><br/><span style='font-size:20px'>six cognitive agents</span>"]
-            P["<span style='font-size:28px'><b>PERCEIVE</b></span><br/><span style='font-size:18px'>sense + separate</span>"]
-            C["<span style='font-size:28px'><b>CONNECT</b></span><br/><span style='font-size:18px'>resolve + assemble</span>"]
-            R["<span style='font-size:28px'><b>REASON</b></span><br/><span style='font-size:18px'>evaluate + propose</span>"]
-            V["<span style='font-size:28px'><b>REVIEW</b></span><br/><span style='font-size:18px'>human judgment</span>"]
-            A["<span style='font-size:28px'><b>ACT</b></span><br/><span style='font-size:18px'>bounded intervention</span>"]
-            L["<span style='font-size:28px'><b>LEARN</b></span><br/><span style='font-size:18px'>verify + retain</span>"]
+            LOOP["<span style='font-size:38px'><b>AGENTIC<br/>LOOP</b></span><br/><span style='font-size:28px'>six cognitive<br/>agents</span>"]
+            P["<span style='font-size:36px'><b>PERCEIVE</b></span><br/><span style='font-size:26px'>sense +<br/>separate</span>"]
+            C["<span style='font-size:36px'><b>CONNECT</b></span><br/><span style='font-size:26px'>resolve +<br/>assemble</span>"]
+            R["<span style='font-size:36px'><b>REASON</b></span><br/><span style='font-size:26px'>evaluate +<br/>propose</span>"]
+            V["<span style='font-size:36px'><b>REVIEW</b></span><br/><span style='font-size:26px'>human<br/>judgment</span>"]
+            A["<span style='font-size:36px'><b>ACT</b></span><br/><span style='font-size:26px'>bounded<br/>intervention</span>"]
+            L["<span style='font-size:36px'><b>LEARN</b></span><br/><span style='font-size:26px'>verify +<br/>retain</span>"]
             LOOP ==> P ==> C ==> R ==> V
-            V ==>|<span style='font-size:18px'><b>ALLOW_BOUNDED</b></span>| A ==> L
+            V ==>|<span style='font-size:26px'><b>ALLOW_<br/>BOUNDED</b></span>| A ==> L
         end
     end
 
@@ -61,20 +45,20 @@ flowchart TB
         direction TB
         subgraph GO_RUNTIME_ROW[" "]
             direction LR
-            LG["<span style='font-size:30px'><b>GO RUNTIME</b></span><br/><span style='font-size:20px'>state machine + SQLite</span>"]
-            N1["<span style='font-size:22px'><b>Capture Evidence</b></span><br/><span style='font-size:17px'>observations · unknowns · provenance</span>"]
-            N2["<span style='font-size:22px'><b>Assemble Event</b></span><br/><span style='font-size:17px'>ontology · entities · relationships</span>"]
-            N3["<span style='font-size:22px'><b>Evaluate Hypotheses</b></span><br/><span style='font-size:17px'>lexical RAG · MCP · citations</span>"]
-            N4["<span style='font-size:22px'><b>Human Interrupt</b></span><br/><span style='font-size:17px'>ASK · STOP · ALLOW_BOUNDED</span>"]
-            N5["<span style='font-size:22px'><b>Release Action</b></span><br/><span style='font-size:17px'>authorized guidance only</span>"]
-            N6["<span style='font-size:22px'><b>Record Outcome</b></span><br/><span style='font-size:17px'>result · policy effect · audit trace</span>"]
+            LG["<span style='font-size:38px'><b>GO<br/>RUNTIME</b></span><br/><span style='font-size:28px'>state machine<br/>+ SQLite</span>"]
+            N1["<span style='font-size:30px'><b>Capture<br/>Evidence</b></span><br/><span style='font-size:25px'>observations<br/>unknowns<br/>provenance</span>"]
+            N2["<span style='font-size:30px'><b>Assemble<br/>Event</b></span><br/><span style='font-size:25px'>ontology<br/>entities<br/>relationships</span>"]
+            N3["<span style='font-size:30px'><b>Evaluate<br/>Hypotheses</b></span><br/><span style='font-size:25px'>lexical RAG<br/>MCP · citations</span>"]
+            N4["<span style='font-size:30px'><b>Human<br/>Interrupt</b></span><br/><span style='font-size:25px'>ASK · STOP<br/>ALLOW_BOUNDED</span>"]
+            N5["<span style='font-size:30px'><b>Release<br/>Action</b></span><br/><span style='font-size:25px'>authorized<br/>guidance only</span>"]
+            N6["<span style='font-size:30px'><b>Record<br/>Outcome</b></span><br/><span style='font-size:25px'>result<br/>policy effect<br/>audit trace</span>"]
             LG ==> N1 ==> N2 ==> N3 ==> N4
-            N4 ==>|<span style='font-size:17px'><b>ALLOW_BOUNDED</b></span>| N5 ==> N6
+            N4 ==>|<span style='font-size:25px'><b>ALLOW_<br/>BOUNDED</b></span>| N5 ==> N6
         end
     end
 
-    GUARD_BAND -. "control contract" .-> AGENT_BAND
-    AGENT_BAND == "agents own judgment · nodes schedule" ==> GO_RUNTIME_BAND
+    GUARD_BAND -. "control<br/>contract" .-> AGENT_BAND
+    AGENT_BAND == "agents own judgment<br/>nodes schedule" ==> GO_RUNTIME_BAND
 
     classDef agent fill:#0F3B57,stroke:#38BDF8,stroke-width:3px,color:#F8FAFC;
     classDef artifact fill:#1F2937,stroke:#94A3B8,stroke-width:2px,color:#F8FAFC;
@@ -104,6 +88,120 @@ sequence. It is not a seventh stage.
 The responsibilities are separate and interact through constraints: **agents
 perform work; Guard constrains what may proceed**. The runtime schedules and
 checkpoints that work. Python uses LangGraph; Go uses its native state machine.
+
+## About This Implementation
+
+I validate architecture through runnable code, explicit contracts, and behavioral
+proofs. This implementation uses Go; the sibling implementation uses Python.
+
+A native Go port of [Agentic Salmon Python](https://github.com/aixstudio/agentic-salmon-python),
+showing how evidence, ontology, retrieval, and human authority constrain agent action.
+
+```text
+GUARD ⊣ [PERCEIVE → CONNECT → REASON → REVIEW → ACT → LEARN]
+```
+
+All six agents execute typed contracts. Reason queries a small reviewed corpus
+through the **official MCP Go SDK over stdio**. Review pauses the workflow;
+Act requires a supported or plausible working hypothesis, explicit acceptance
+of uncertainty, and authorization for bounded cited guidance. Learn preserves
+outcome and preference evidence without weakening policy.
+
+<img src="docs/assets/salmon-pre-cook-input.jpeg" alt="Two seasoned food portions in an air-fryer basket before cooking" width="240">
+
+*Reviewed pre-cook input; food identity and safety remain unverified.*
+
+## Logic Flow — One Run, Three Proofs
+
+One case moves from evidence to human approval to a controlled response. Approval gives permission to proceed; it does not resolve missing facts. Keep the same run ID throughout, even if you close the terminal between steps. Full details are in `log/<run-id>.log`.
+
+```mermaid
+%%{init: {"theme":"dark","themeVariables":{"fontSize":"22px","primaryTextColor":"#F8FAFC","lineColor":"#94A3B8","clusterBkg":"#111827","clusterBorder":"#475569","edgeLabelBackground":"#111827"},"flowchart":{"nodeSpacing":26,"rankSpacing":32,"htmlLabels":true,"curve":"basis"}}}%%
+flowchart TB
+    subgraph PROOF1_BAND[" "]
+        direction TB
+        subgraph PROOF1_ROW[" "]
+            direction LR
+            F1["<span style='font-size:30px'><b>PROOF-1</b></span><br/><span style='font-size:18px'>evidence + pause</span>"]
+            FC["<b>Perceive + Connect</b><br/><span style='font-size:18px'>reviewed input · ontology</span>"]
+            FR["<b>Reason</b><br/><span style='font-size:18px'>RAG through MCP · citations</span>"]
+            FP["<b>Save Review Pause</b><br/><span style='font-size:18px'>SQLite · no action</span>"]
+            F1 ==> FC ==> FR ==> FP
+        end
+    end
+
+    subgraph PROOF2_BAND[" "]
+        direction TB
+        subgraph PROOF2_ROW[" "]
+            direction LR
+            F2["<span style='font-size:30px'><b>PROOF-2</b></span><br/><span style='font-size:18px'>HITL + adjudication</span>"]
+            FL["<b>Load Saved Pause</b><br/><span style='font-size:18px'>same run · same evidence</span>"]
+            FD{"<b>Human Decision</b>"}
+            FA["<b>Save Adjudication</b><br/><span style='font-size:18px'>bounded authority · no action</span>"]
+            FS["<b>TEST END — STOPPED</b><br/><span style='font-size:18px'>Act / Learn blocked</span>"]
+            F2 ==> FL ==> FD
+            FD ==>|APPROVE| FA
+            FD -->|STOP / Enter / EOF| FS
+        end
+    end
+
+    subgraph PROOF3_BAND[" "]
+        direction TB
+        subgraph PROOF3_ROW[" "]
+            direction LR
+            F3["<span style='font-size:30px'><b>PROOF-3</b></span><br/><span style='font-size:18px'>action + learning</span>"]
+            FG{"<b>Release Gate</b><br/><span style='font-size:18px'>Guard + saved run phase</span>"}
+            FX["<b>Act</b><br/><span style='font-size:18px'>bounded cited guidance</span>"]
+            FE["<b>Learn + TEST END</b><br/><span style='font-size:18px'>historical outcome · policy unchanged</span>"]
+            FB["<b>BLOCKED</b><br/><span style='font-size:18px'>wrong phase or repeat execution</span>"]
+            F3 ==> FG
+            FG ==>|yes| FX ==> FE
+            FG -->|no| FB
+        end
+    end
+
+    PROOF1_BAND == "saved review pause" ==> PROOF2_BAND
+    PROOF2_BAND == "saved APPROVE only" ==> PROOF3_BAND
+
+    classDef work fill:#0F3B57,stroke:#38BDF8,stroke-width:3px,color:#F8FAFC;
+    classDef saved fill:#1F2937,stroke:#E0A800,stroke-width:3px,color:#F8FAFC;
+    classDef bandLabel fill:#111827,stroke:#E0A800,stroke-width:4px,color:#F8FAFC;
+    classDef gate fill:#3F1D52,stroke:#C084FC,stroke-width:3px,color:#F8FAFC;
+    classDef stopped fill:#34202A,stroke:#F87171,stroke-width:2px,color:#F8FAFC;
+    class FC,FR,FL,FX,FE work;
+    class FP,FA saved;
+    class F1,F2,F3 bandLabel;
+    class FD,FG gate;
+    class FS,FB stopped;
+    style PROOF1_ROW fill:transparent,stroke:transparent
+    style PROOF2_ROW fill:transparent,stroke:transparent
+    style PROOF3_ROW fill:transparent,stroke:transparent
+```
+
+1. **Proof-1 — Show the evidence and pause.**
+
+   **Known:** The evidence suggests fish, and supporting reference guidance is available.
+
+   **Not known:** Food identity, ingredients and allergens, storage history, odor, and freshness and safety remain unverified. No response has been authorized.
+
+   **Next:** Review the evidence, missing facts, and proposed limits. Continue to Proof-2 to approve or stop the saved case.
+
+2. **Proof-2 — Let a person decide.**
+
+   **Known:** Choosing `APPROVE` records permission to provide limited guidance backed by sources. Guidance has not yet been released.
+
+   **Not known:** The same food facts remain unverified. Approval accepts those limits; it does not establish safety.
+
+   **Next:** Continue to Proof-3 only after approval is saved. `STOP` or Enter ends the case without releasing guidance.
+
+3. **Proof-3 — Deliver the approved guidance and close.**
+
+   **Known:** The approved guidance is released, and a historical outcome and preference are recorded. Safety rules stay unchanged.
+
+   **Not known:** The original missing facts remain unresolved. No new cooking or safety test has occurred.
+
+   **Finish:** Expect `TEST END — PASS`. The demo is complete; inspect the log for detail. The completed case cannot release guidance again.
+
 
 ## Technology Stack and Rationale
 
