@@ -92,12 +92,20 @@ func snapshot(r RunResult) RunResult {
 	return out
 }
 func (w *Workflow) Start(ctx context.Context, outcome, feedback string) (RunResult, error) {
-	w.mu.Lock()
-	defer w.mu.Unlock()
 	id, err := newRunID()
 	if err != nil {
 		return RunResult{}, err
 	}
+	return w.StartWithID(ctx, id, outcome, feedback)
+}
+
+func (w *Workflow) StartWithID(ctx context.Context, id, outcome, feedback string) (RunResult, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if _, exists := w.runs[id]; exists {
+		return RunResult{}, fmt.Errorf("run ID already exists")
+	}
+	var err error
 	s := &runState{outcome: outcome, feedback: feedback, result: RunResult{RunID: id, Status: "running", Decision: Ask, Events: []Event{}, Metrics: []Metric{}, Telemetry: Telemetry{Note: "N/A; reviewed perception fixture and deterministic agent contracts"}}}
 	started := time.Now()
 	p, err := w.perceive.Run()
@@ -133,7 +141,7 @@ func (w *Workflow) Start(ctx context.Context, outcome, feedback string) (RunResu
 	w.runs[id] = s
 	return snapshot(s.result), nil
 }
-func (w *Workflow) Resume(ctx context.Context, id string, e HumanEvidence) (RunResult, error) {
+func (w *Workflow) Adjudicate(ctx context.Context, id string, e HumanEvidence) (RunResult, error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	s, ok := w.runs[id]
@@ -166,11 +174,24 @@ func (w *Workflow) Resume(ctx context.Context, id string, e HumanEvidence) (RunR
 		s.result.Status = "stopped"
 		return snapshot(s.result), nil
 	}
+	s.result.Status = "adjudicated"
+	return snapshot(s.result), nil
+}
+func (w *Workflow) Execute(ctx context.Context, id string) (RunResult, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	s, ok := w.runs[id]
+	if !ok || s.result.Status != "adjudicated" {
+		return RunResult{}, fmt.Errorf("run is not adjudicated")
+	}
+	if err := ctx.Err(); err != nil {
+		return RunResult{}, err
+	}
 	if err := w.guard.Require(ActStage, s.artifacts); err != nil {
 		return RunResult{}, err
 	}
-	started = time.Now()
-	a, err := (ActAgent{}).Run(*s.artifacts.Reason, v)
+	started := time.Now()
+	a, err := (ActAgent{}).Run(*s.artifacts.Reason, *s.artifacts.Review)
 	if err != nil {
 		s.result.Status = "failed"
 		return snapshot(s.result), err
@@ -190,4 +211,13 @@ func (w *Workflow) Resume(ctx context.Context, id string, e HumanEvidence) (RunR
 	s.record(LearnStage, started, "Recorded outcome evidence without changing policy.", l)
 	s.result.Status = "completed"
 	return snapshot(s.result), nil
+}
+
+// Resume retains the one-process API; the proof runner separates adjudication and execution.
+func (w *Workflow) Resume(ctx context.Context, id string, e HumanEvidence) (RunResult, error) {
+	r, err := w.Adjudicate(ctx, id, e)
+	if err != nil || r.Status != "adjudicated" {
+		return r, err
+	}
+	return w.Execute(ctx, id)
 }

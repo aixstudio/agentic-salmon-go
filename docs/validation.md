@@ -1,12 +1,12 @@
 # Validation record
 
-Validated on 2026-10-17 on macOS ARM64.
+Initial port validated on 2026-10-17 on macOS ARM64.
 
 ## Source provenance
 
 This repository was ported from the public Python repository
-[`aixstudio/agentic-salmon-deploy`](https://github.com/aixstudio/agentic-salmon-deploy)
-at commit [`8eb404dfa25d05628b02749f64e9dcd192d66495`](https://github.com/aixstudio/agentic-salmon-deploy/commit/8eb404dfa25d05628b02749f64e9dcd192d66495)
+[`aixstudio/agentic-salmon-python`](https://github.com/aixstudio/agentic-salmon-python)
+at commit [`8eb404dfa25d05628b02749f64e9dcd192d66495`](https://github.com/aixstudio/agentic-salmon-python/commit/8eb404dfa25d05628b02749f64e9dcd192d66495)
 (source version 0.2.1). Only curated public assets and source contracts were
 used; the new repository has independent Git history.
 
@@ -49,3 +49,9 @@ These checks establish the stated local demo behavior. CI performs its own
 Linux formatting, dependency, vet, race-test, build, and real stdio MCP checks.
 No production deployment, hosted approval service, or dense semantic retrieval
 equivalence is claimed for the Go port.
+
+## Durable HITL revision — 2026-10-18
+
+The CLI is now three incremental proof commands with one run ID and local SQLite persistence. Separate-process tests establish: Proof-1 saves exactly three stages; APPROVE in Proof-2 saves Review as stage four and releases no guidance; Proof-3 executes Act/Learn and records completion with six stages. Tests compare saved evidence to prove no repeated perception/retrieval, reject invalid review input without consuming the pause, enforce STOP/EOF, block wrong-order commands and reject repeated Act. The proof flow has no optional/free-text evidence fields.
+
+The corresponding Python source uses the official LangGraph async SQLite checkpointer, preserving its LangGraph and dense semantic retrieval implementation. Both runners produce bounded terminal guidance and detailed ignored log/<run-id>.log artifacts. Historical outcome evidence is fixed and labeled; no new cooking outcome is asserted.

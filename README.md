@@ -1,6 +1,6 @@
 # Agentic Salmon — Go
 
-A native Go port of [Agentic Salmon Python](https://github.com/aixstudio/agentic-salmon-deploy),
+A native Go port of [Agentic Salmon Python](https://github.com/aixstudio/agentic-salmon-python),
 showing how evidence, ontology, retrieval, and human authority constrain agent action.
 
 ```text
@@ -31,61 +31,105 @@ The executable contains the reviewed knowledge corpus. There is no Python,
 model download, API key, external service, or vector database dependency.
 The CLI loads the reviewed image and observation fixture from the checkout.
 
-## Three progressive proofs
+## Run the Three Incremental HITL Proofs
 
-### 1. Deny by default
+Use the same run ID in all three commands. These proofs continue **one durable
+run**, including after closing and reopening the terminal. For a repeat test,
+use a new run ID in all three commands; existing runs are never overwritten.
 
-```bash
-./bin/agentic-salmon demo
-```
+### Proof-1 — Intentional pause for HITL
 
-Expected: `status: interrupted`, `decision: ask`, `guidance: null`; only
-Perceive, Connect, and Reason have executed. Reason's artifact contains ranked
-chunks, citations, content digests, and negotiated MCP protocol metadata.
+**Proof ID:** Proof-1
 
-### 2. Interactive human review
+**Test Conditions:** Run from the repository root with a fresh `salmon-demo-001`
+run ID. The reviewed image, fixture, and corpus are available. No approval has
+been supplied. This step performs real retrieval across the MCP boundary.
 
-```bash
-./bin/agentic-salmon demo --interactive \
-  --outcome "390°F for 14 minutes; wonderful and fresh-tasting" \
-  --feedback "moderately spicy result preferred"
-```
-
-Select `2` or `fish`, answer `y` to accepting retained unknowns and authorizing
-bounded guidance, then optionally provide storage and odor recollections.
-Invalid or unknown hypotheses return to Review. `stop`, `n`, Enter at an
-authorization prompt, or end of input stops without releasing guidance.
-Prompts go to stderr; stdout remains machine-readable JSON.
-
-Expected: all six stages complete on the same run ID after valid authorization.
-
-### 3. Explicit automated authorization
+**Test Cmd:**
 
 ```bash
-./bin/agentic-salmon demo \
-  --review allow-bounded \
-  --selected-hypothesis fish \
-  --storage-recollection "retrieved frozen from home freezer; exact cold chain unknown" \
-  --odor-observation "seasoning smelled reminiscent of lasagna" \
-  --outcome "390°F for 14 minutes; wonderful and fresh-tasting" \
-  --feedback "moderately spicy result preferred"
+./bin/agentic-salmon proof-1 --run-id salmon-demo-001
 ```
 
-`--review allow-bounded` explicitly supplies acceptance and authorization; it
-still cannot authorize an unknown or unoffered hypothesis. `--review stop`
-demonstrates refusal. The same workflow API supports `Start` and `Resume` with
-typed `HumanEvidence` and separate optional boolean authority fields.
+**What to Expect:** Perceive → Connect → Reason execute, then the system pauses
+before Review. The terminal tells you what to review: evidence supports `fish`
+as a working hypothesis, species remains unverified, all five unknowns must be
+retained, and only cited bounded guidance may be authorized. Act/Learn do not
+run. The checkpoint is saved in `log/salmon-demo-001.sqlite3`; detailed evidence,
+retrieval results, citations, MCP metadata, timings, and state are recorded in
+`log/salmon-demo-001.log`.
 
-Reports are written under ignored `traces/`; use `--report-directory` to change
-the location. Reports include timings and agent artifacts. No generative model
-is called, so token usage is reported as unavailable.
+**What to Do Next:** Review the evidence boundary and requested authority.
+Continue to Proof-2 with this same run ID. You may exit the terminal first.
+
+### Proof-2 — Human review and adjudication of the saved run
+
+**Proof ID:** Proof-2
+
+**Test Conditions:** Proof-1 is paused for `salmon-demo-001`. No stage is rerun.
+The system displays the saved review contract. The deterministic acceptance
+path uses the single prescribed answer `APPROVE`; no storage, odor, or other
+free-text observations are requested.
+
+**Test Cmd:**
+
+```bash
+./bin/agentic-salmon proof-2 --run-id salmon-demo-001
+```
+
+At the system prompt, type exactly:
+
+```text
+APPROVE
+```
+
+**What to Expect:** Review records `ALLOW_BOUNDED`: select the evidence-supported
+`fish` hypothesis, acknowledge **all** retained unknowns, and authorize only
+bounded cited guidance. The adjudication is saved under the same run ID.
+Act/Learn still do not run. Watch out: approval is authority to release the
+bounded response; it does not verify food identity or safety. `STOP`, Enter,
+or end of input ends this run without action. Other input leaves it paused.
+
+**What to Do Next:** For the prescribed `APPROVE` path, continue to Proof-3 with
+the same run ID. A stopped run is a test end and cannot proceed to Proof-3.
+
+### Proof-3 — Authorized action, learning, and test end
+
+**Proof ID:** Proof-3
+
+**Test Conditions:** Proof-2 saved an approved adjudication for
+`salmon-demo-001`. Proof-3 consumes that decision; it cannot bypass Review.
+The learning input is the fixed historical case outcome and preference from
+the public story, explicitly labeled as historical evidence.
+
+**Test Cmd:**
+
+```bash
+./bin/agentic-salmon proof-3 --run-id salmon-demo-001
+```
+
+**What to Expect:** Act releases only the human-authorized guidance supported
+by a retrieved citation. Learn records the historical outcome and preference
+with no policy change. The run contains all six stages exactly once, reports
+`COMPLETED`, and acknowledges `TEST END — PASS`. Watch out: this executes a
+bounded guidance artifact, not a cooking action or a new food-safety trial.
+Full guidance, adjudication, citations, and learning evidence remain in the
+same `log/salmon-demo-001.log`.
+
+**What to Do Next:** The test is finished. Inspect the run log if deeper review
+is needed. Repeating Proof-3 is rejected rather than replaying Act.
+
+SQLite checkpoints and logs are local, ignored runtime artifacts. Keep them
+if you want to resume or inspect a run. An operation interrupted during active
+execution is blocked from automatic retry; this demo does not claim crash
+recovery for arbitrary external side effects or production approval identity.
 
 ## Architecture and port choices
 
 | Concern | Python sibling | Go implementation |
 | --- | --- | --- |
 | Agent contracts | Typed dataclasses | Typed structs and owned agent methods |
-| Orchestration | LangGraph StateGraph and interrupt | Native state machine with in-memory same-run pause/resume |
+| Orchestration | LangGraph StateGraph and interrupt | Native state machine with SQLite-backed cross-process pickup |
 | Knowledge protocol | Official MCP Python SDK, stdio | Official MCP Go SDK, stdio subprocess |
 | Retrieval | FastEmbed dense semantic embeddings | Local TF-IDF sparse vectors and cosine ranking |
 | Evidence and authority | Reviewed fixture, ontology, Guard | Same fixture, ontology rules, decisions and authority requirements |
@@ -101,8 +145,7 @@ retriever to add a different retrieval backend.
 
 LangGraph is a Python dependency, so the Go orchestration layer is a native
 state machine. It retains the separation between agent judgment and node
-scheduling. Checkpoints last only for the current process; there is no durable
-resume across CLI invocations. Completion and refusal prevent replaying Act.
+scheduling. SQLite saves checkpoints between CLI invocations. Completion and refusal prevent replaying Act. An active claim interrupted by a crash is not automatically replayed.
 This is a narrow architectural demo, with deterministic agent behavior and a
 reviewed perception fixture; it does not claim live vision, autonomous LLM
 reasoning, or production approval services.

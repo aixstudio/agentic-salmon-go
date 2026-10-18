@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"time"
@@ -11,7 +12,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-const Version = "0.1.0"
+const Version = "0.2.0"
 const ServerName = "agentic-salmon-go-knowledge"
 
 type SearchArgs struct {
@@ -49,7 +50,10 @@ func ServeKnowledge(ctx context.Context) error {
 
 // MCPKnowledgePort launches only the configured executable with the read-only
 // knowledge-server subcommand. It never accepts a shell command from evidence.
-type MCPKnowledgePort struct{ Executable string }
+type MCPKnowledgePort struct {
+	Executable string
+	Stderr     io.Writer
+}
 
 func (p MCPKnowledgePort) Search(ctx context.Context, query string, k int) (KnowledgeResult, error) {
 	var out KnowledgeResult
@@ -62,7 +66,10 @@ func (p MCPKnowledgePort) Search(ctx context.Context, query string, k int) (Know
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, p.Executable, "mcp-server")
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = p.Stderr
+	if cmd.Stderr == nil {
+		cmd.Stderr = os.Stderr
+	}
 	client := mcp.NewClient(&mcp.Implementation{Name: "agentic-salmon-go", Version: Version}, nil)
 	session, err := client.Connect(ctx, &mcp.CommandTransport{Command: cmd}, nil)
 	if err != nil {

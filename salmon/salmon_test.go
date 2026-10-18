@@ -213,7 +213,7 @@ func TestReviewAuthority(t *testing.T) {
 	e.Odor = "seasoning odor"
 	e.Storage = "freezer recollection"
 	v := (ReviewAgent{}).Run(reasoning(t), e)
-	if !contains(v.Resolved, "odor after opening") || !contains(v.Unknowns, "storage and cold-chain history") || !contains(v.Unknowns, "verified food identity") {
+	if contains(v.Resolved, "odor after opening") || !contains(v.Unknowns, "odor after opening") || !contains(v.Unknowns, "storage and cold-chain history") || !contains(v.Unknowns, "verified food identity") {
 		t.Fatal("human recollection erased unresolved evidence")
 	}
 }
@@ -424,5 +424,56 @@ func TestMCPSourceResolutionAndToolErrors(t *testing.T) {
 		if !result.IsError {
 			t.Fatal("MCP accepted invalid retrieval arguments")
 		}
+	}
+}
+
+func TestDurableProofConcurrentReviewAndActiveClaim(t *testing.T) {
+	dir := t.TempDir()
+	s, err := OpenProofStore(dir, "concurrent-001", true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = RunProof(context.Background(), "proof-1", s, "", fixture(), localKnowledge{}); err != nil {
+		t.Fatal(err)
+	}
+	s.Close()
+	a, err := OpenProofStore(dir, "concurrent-001", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer a.Close()
+	b, err := OpenProofStore(dir, "concurrent-001", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer b.Close()
+	start := make(chan struct{})
+	results := make(chan error, 2)
+	for _, store := range []*ProofStore{a, b} {
+		go func(store *ProofStore) {
+			<-start
+			_, err := RunProof(context.Background(), "proof-2", store, "APPROVE", fixture(), localKnowledge{})
+			results <- err
+		}(store)
+	}
+	close(start)
+	success := 0
+	for range 2 {
+		if <-results == nil {
+			success++
+		}
+	}
+	if success != 1 {
+		t.Fatalf("concurrent review successes = %d, want 1", success)
+	}
+	r, err := a.Read("adjudicated")
+	if err != nil || len(r.Events) != 4 {
+		t.Fatal("concurrent review replayed a stage", err)
+	}
+	if err = a.claim("adjudicated", "executing"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err = RunProof(context.Background(), "proof-3", b, "", fixture(), localKnowledge{}); err == nil {
+		t.Fatal("active execution claim was replayed")
 	}
 }

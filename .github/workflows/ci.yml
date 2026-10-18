@@ -23,9 +23,10 @@ jobs:
         run: go test -race -coverprofile=coverage.out ./...
       - name: Build
         run: go build -o bin/agentic-salmon ./cmd/agentic-salmon
-      - name: Real stdio MCP demonstration
+      - name: Durable stdio MCP and HITL proofs
         run: |
-          ./bin/agentic-salmon demo > /tmp/pending.json
-          ./bin/agentic-salmon demo --review allow-bounded --selected-hypothesis fish > /tmp/approved.json
-          jq -e '.status == "interrupted" and .guidance == null and (.events | length) == 3' /tmp/pending.json
-          jq -e '.status == "completed" and .decision == "allow_bounded" and (.events | length) == 6 and .events[2].evidence.knowledge.mcp_call.success == true and (.events[4].evidence.citation_chunk_ids | length) > 0' /tmp/approved.json
+          ./bin/agentic-salmon proof-1 --run-id ci-proof
+          printf 'APPROVE\n' | ./bin/agentic-salmon proof-2 --run-id ci-proof
+          ./bin/agentic-salmon proof-3 --run-id ci-proof
+          if ./bin/agentic-salmon proof-3 --run-id ci-proof; then exit 1; fi
+          jq -s -e '.[0].result.events[2].evidence.knowledge.mcp_call.success == true and .[1].result.guidance == null and .[2].phase == "completed" and (.[2].result.events | length) == 6' log/ci-proof.log

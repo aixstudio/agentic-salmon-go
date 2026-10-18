@@ -83,11 +83,7 @@ type ReviewAgent struct{}
 func (ReviewAgent) Run(r ReasonResult, e HumanEvidence) ReviewResult {
 	out := ReviewResult{Decision: Ask, Selected: e.Selected, Unknowns: []string{}, Resolved: []string{}, Reasons: []string{}}
 	for _, u := range r.Unknowns {
-		if u == "odor after opening" && strings.TrimSpace(e.Odor) != "" {
-			out.Resolved = append(out.Resolved, u)
-		} else {
-			out.Unknowns = append(out.Unknowns, u)
-		}
+		out.Unknowns = append(out.Unknowns, u)
 	}
 	if e.Concern {
 		out.Decision = Stop

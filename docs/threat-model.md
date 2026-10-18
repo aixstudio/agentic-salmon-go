@@ -10,8 +10,9 @@
 | Repeated action | A run can resume only while interrupted; completed, stopped, or failed runs cannot replay Act. |
 | Tool or command injection | The runtime supplies the executable and fixed subcommand. Evidence never becomes a shell command or tool name. Retrieval does not execute source text. |
 | Policy weakened by feedback | Learn records outcome and preferences and reports no policy effect; no policy mutation interface exists. |
-| Accidental disclosure | Publish curated source and reviewed assets; traces, environment files, binaries, and editor workspace files are ignored. Traces intentionally include human inputs and should be reviewed before sharing. |
+| Accidental disclosure | Publish curated source and reviewed assets; traces, environment files, SQLite checkpoints, `log/`, binaries, and editor workspace files are ignored. Traces intentionally include human inputs and should be reviewed before sharing. |
 
-This demo does not provide authenticated human identity, cross-process durable
-approvals, remote-server authentication, corpus signing, or production audit
+This demo does not provide authenticated human identity, production approval identity, remote-server authentication, corpus signing, or production audit
 retention. The CLI is a local demonstration of explicit authority contracts.
+
+The three CLI proofs use durable local SQLite checkpoints and conditional phase claims. They can resume after a normal process exit. A crashed active claim is not automatically retried; this is a local demo, not a distributed exactly-once effects system. Approval input is the fixed APPROVE/STOP contract, with all uncertainty retained.

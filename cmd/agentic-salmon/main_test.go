@@ -1,85 +1,125 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/aixstudio/agentic-salmon-go/salmon"
 	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
-
-	"github.com/aixstudio/agentic-salmon-go/salmon"
 )
 
 func TestMain(m *testing.M) {
-	if len(os.Args) == 2 && os.Args[1] == "mcp-server" {
+	if len(os.Args) > 1 && os.Args[1] == "mcp-server" {
 		if err := salmon.ServeKnowledge(context.Background()); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)
 		}
 		os.Exit(0)
 	}
+	if len(os.Args) > 1 && os.Args[1] == "cli-proof" {
+		if err := run(context.Background(), os.Args[2:], os.Stdin, os.Stdout, os.Stderr, os.Args[0]); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
+	if err := os.Chdir("../.."); err != nil {
+		panic(err)
+	}
 	os.Exit(m.Run())
 }
-func TestCLIPaths(t *testing.T) {
-	cases := []struct {
-		name, input, status string
-		extra               []string
-		events              int
-	}{
-		{"pending", "", "interrupted", nil, 3},
-		{"approved", "", "completed", []string{"--review", "allow-bounded"}, 6},
-		{"stop", "", "stopped", []string{"--review", "stop"}, 4},
-		{"unknown", "", "interrupted", []string{"--review", "allow-bounded", "--selected-hypothesis", "korean_spiced_soup_food"}, 4},
-		{"interactive number", "2\ny\ny\nfreezer recollection\nseasoning odor\n", "completed", []string{"--interactive"}, 6},
-		{"interactive retry", "chicken\n1\nfish\ny\ny\n\n\n", "completed", []string{"--interactive"}, 8},
-		{"interactive eof", "", "stopped", []string{"--interactive"}, 4},
-		{"interactive refusal", "2\nn\n", "stopped", []string{"--interactive"}, 4},
+func invoke(t *testing.T, dir, id, proof, input string, wantError bool) string {
+	t.Helper()
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
 	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			args := []string{"demo", "--fixture", "../../examples/frozen-salmon-observation.json", "--input-image", "../../docs/assets/salmon-pre-cook-input.jpeg", "--report-directory", t.TempDir()}
-			args = append(args, c.extra...)
-			executable, err := os.Executable()
-			if err != nil {
-				t.Fatal(err)
-			}
-			var out, stderr bytes.Buffer
-			if err = run(context.Background(), args, strings.NewReader(c.input), &out, &stderr, executable); err != nil {
-				t.Fatal(err)
-			}
-			var result struct {
-				salmon.RunResult
-				Report string `json:"local_report"`
-			}
-			if err = json.Unmarshal(out.Bytes(), &result); err != nil {
-				t.Fatalf("stdout is not clean JSON: %v", err)
-			}
-			if result.Status != c.status || len(result.Events) != c.events {
-				t.Fatalf("unexpected CLI result: %s events=%d; stderr=%s", result.Status, len(result.Events), stderr.String())
-			}
-			if _, err = os.Stat(result.Report); err != nil {
-				t.Fatal("missing report", err)
-			}
-		})
+	cmd := exec.Command(exe, "cli-proof", proof, "--run-id", id, "--log-directory", dir)
+	cmd.Stdin = strings.NewReader(input)
+	data, err := cmd.CombinedOutput()
+	if (err != nil) != wantError {
+		t.Fatalf("%s: %v %s", proof, err, data)
+	}
+	return string(data)
+}
+func readResult(t *testing.T, dir, id, phase string) salmon.RunResult {
+	t.Helper()
+	store, err := salmon.OpenProofStore(dir, id, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer store.Close()
+	r, err := store.Read(phase)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return r
+}
+func TestThreeProofsAcrossProcesses(t *testing.T) {
+	dir := t.TempDir()
+	id := "cli-001"
+	out := invoke(t, dir, id, "proof-1", "", false)
+	if !strings.Contains(out, "Act/Learn have NOT run") || strings.Contains(out, "\"events\"") {
+		t.Fatal("terminal output is not bounded guidance")
+	}
+	first := readResult(t, dir, id, "paused")
+	if len(first.Events) != 3 || first.Guidance != nil {
+		t.Fatal("Proof-1 released action")
+	}
+	invoke(t, dir, id, "proof-3", "", true)
+	out = invoke(t, dir, id, "proof-2", "guess\n", true)
+	if !strings.Contains(out, "remains paused") {
+		t.Fatal("invalid answer advanced")
+	}
+	out = invoke(t, dir, id, "proof-2", "APPROVE\n", false)
+	if strings.Contains(out, "Storage recollection") || strings.Contains(out, "Odor observation") {
+		t.Fatal("free text prompts remain")
+	}
+	second := readResult(t, dir, id, "adjudicated")
+	if len(second.Events) != 4 || second.Guidance != nil || second.RunID != first.RunID {
+		t.Fatal("Proof-2 did not stop before action")
+	}
+	a, _ := json.Marshal(first.Events)
+	b, _ := json.Marshal(second.Events[:3])
+	if !bytes.Equal(a, b) {
+		t.Fatal("evidence was rerun")
+	}
+	out = invoke(t, dir, id, "proof-3", "", false)
+	if !strings.Contains(out, "TEST END — PASS") {
+		t.Fatal("missing test-end acknowledgement")
+	}
+	third := readResult(t, dir, id, "completed")
+	if len(third.Events) != 6 || third.Guidance == nil {
+		t.Fatal("Proof-3 did not complete")
+	}
+	invoke(t, dir, id, "proof-3", "", true)
+	invoke(t, dir, id, "proof-1", "", true)
+	data, err := os.ReadFile(filepath.Join(dir, id+".log"))
+	if err != nil || !bytes.Contains(data, []byte("citation_chunk_ids")) {
+		t.Fatal("missing detailed log")
 	}
 }
-func TestPromptRejectsSelectionBeforeAuthorityQuestions(t *testing.T) {
-	p := &salmon.Interrupt{Offered: []salmon.OfferedHypothesis{{ID: "unknown", Status: salmon.Unknown}, {ID: "fish", Eligible: true}}}
-	for _, input := range []string{"1\n", "chicken\n"} {
-		var out bytes.Buffer
-		e := promptReview(bufio.NewScanner(strings.NewReader(input)), &out, p)
-		if e.Authorizes != nil || strings.Contains(out.String(), "Authorize") {
-			t.Fatal("invalid selection consumed authority input")
+func TestReviewStopAndEOF(t *testing.T) {
+	for _, input := range []string{"STOP\n", "", "\n"} {
+		dir := t.TempDir()
+		invoke(t, dir, "stop-001", "proof-1", "", false)
+		invoke(t, dir, "stop-001", "proof-2", input, false)
+		r := readResult(t, dir, "stop-001", "stopped")
+		if r.Guidance != nil || len(r.Events) != 4 {
+			t.Fatal("stop released action")
 		}
+		invoke(t, dir, "stop-001", "proof-3", "", true)
 	}
 }
-func TestCLIRejectsConflictingOrInvalidArguments(t *testing.T) {
-	for _, args := range [][]string{{"demo", "--interactive", "--review", "stop"}, {"demo", "--review", "typo"}, {"unknown"}, {"mcp-server", "extra"}} {
+func TestInvalidArguments(t *testing.T) {
+	for _, args := range [][]string{{}, {"demo"}, {"proof-1"}, {"proof-1", "--run-id", "../bad"}, {"proof-1", "--run-id", "x", "--interactive"}} {
 		if err := run(context.Background(), args, strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{}, "unused"); err == nil {
-			t.Fatal("invalid CLI arguments accepted")
+			t.Fatal("invalid args accepted")
 		}
 	}
 }
