@@ -1,0 +1,60 @@
+%%{init: {"theme":"dark","themeVariables":{"fontSize":"22px","primaryTextColor":"#F8FAFC","lineColor":"#94A3B8","clusterBkg":"#111827","clusterBorder":"#475569","edgeLabelBackground":"#111827"},"flowchart":{"nodeSpacing":26,"rankSpacing":32,"htmlLabels":true,"curve":"basis"}}}%%
+flowchart TB
+    subgraph PROOF1_BAND[" "]
+        direction TB
+        subgraph PROOF1_ROW[" "]
+            direction LR
+            F1["<span style='font-size:30px'><b>PROOF-1</b></span><br/><span style='font-size:18px'>evidence + pause</span>"]
+            FC["<b>Perceive + Connect</b><br/><span style='font-size:18px'>reviewed input · ontology</span>"]
+            FR["<b>Reason</b><br/><span style='font-size:18px'>RAG through MCP · citations</span>"]
+            FP["<b>Save Review Pause</b><br/><span style='font-size:18px'>SQLite · no action</span>"]
+            F1 ==> FC ==> FR ==> FP
+        end
+    end
+
+    subgraph PROOF2_BAND[" "]
+        direction TB
+        subgraph PROOF2_ROW[" "]
+            direction LR
+            F2["<span style='font-size:30px'><b>PROOF-2</b></span><br/><span style='font-size:18px'>HITL + adjudication</span>"]
+            FL["<b>Load Saved Pause</b><br/><span style='font-size:18px'>same run · same evidence</span>"]
+            FD{"<b>Human Decision</b>"}
+            FA["<b>Save Adjudication</b><br/><span style='font-size:18px'>bounded authority · no action</span>"]
+            FS["<b>TEST END — STOPPED</b><br/><span style='font-size:18px'>Act / Learn blocked</span>"]
+            F2 ==> FL ==> FD
+            FD ==>|APPROVE| FA
+            FD -->|STOP / Enter / EOF| FS
+        end
+    end
+
+    subgraph PROOF3_BAND[" "]
+        direction TB
+        subgraph PROOF3_ROW[" "]
+            direction LR
+            F3["<span style='font-size:30px'><b>PROOF-3</b></span><br/><span style='font-size:18px'>action + learning</span>"]
+            FG{"<b>Release Gate</b><br/><span style='font-size:18px'>Guard + saved run phase</span>"}
+            FX["<b>Act</b><br/><span style='font-size:18px'>bounded cited guidance</span>"]
+            FE["<b>Learn + TEST END</b><br/><span style='font-size:18px'>historical outcome · policy unchanged</span>"]
+            FB["<b>BLOCKED</b><br/><span style='font-size:18px'>wrong phase or repeat execution</span>"]
+            F3 ==> FG
+            FG ==>|yes| FX ==> FE
+            FG -->|no| FB
+        end
+    end
+
+    PROOF1_BAND == "saved review pause" ==> PROOF2_BAND
+    PROOF2_BAND == "saved APPROVE only" ==> PROOF3_BAND
+
+    classDef work fill:#0F3B57,stroke:#38BDF8,stroke-width:3px,color:#F8FAFC;
+    classDef saved fill:#1F2937,stroke:#E0A800,stroke-width:3px,color:#F8FAFC;
+    classDef bandLabel fill:#111827,stroke:#E0A800,stroke-width:4px,color:#F8FAFC;
+    classDef gate fill:#3F1D52,stroke:#C084FC,stroke-width:3px,color:#F8FAFC;
+    classDef stopped fill:#34202A,stroke:#F87171,stroke-width:2px,color:#F8FAFC;
+    class FC,FR,FL,FX,FE work;
+    class FP,FA saved;
+    class F1,F2,F3 bandLabel;
+    class FD,FG gate;
+    class FS,FB stopped;
+    style PROOF1_ROW fill:transparent,stroke:transparent
+    style PROOF2_ROW fill:transparent,stroke:transparent
+    style PROOF3_ROW fill:transparent,stroke:transparent
