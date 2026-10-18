@@ -51,7 +51,7 @@ outcome and preference evidence without weakening policy.
 
 <img src="docs/assets/salmon-pre-cook-input.jpeg" alt="Two seasoned food portions in an air-fryer basket before cooking" width="240">
 
-*Reviewed pre-cook input; food identity and safety remain unverified.*
+*Reviewed meal-prep input; food identity and safety remain unverified.*
 
 ## Logic Flow — One Run, Three Proofs
 
