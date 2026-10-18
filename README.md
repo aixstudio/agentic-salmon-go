@@ -1,5 +1,12 @@
 # Agentic Salmon — Go
 
+- **Owner:** Joseph Shi — [aixstudio](https://github.com/aixstudio)
+- **Role:** Principal Architect — Agentic AI & Data Platform
+- **Created:** 2026-10-17 · **Updated:** 2026-10-18
+
+I validate architecture through runnable code, explicit contracts, and behavioral
+proofs. This implementation uses Go; the sibling implementation uses Python.
+
 A native Go port of [Agentic Salmon Python](https://github.com/aixstudio/agentic-salmon-python),
 showing how evidence, ontology, retrieval, and human authority constrain agent action.
 
@@ -14,6 +21,110 @@ of uncertainty, and authorization for bounded cited guidance. Learn preserves
 outcome and preference evidence without weakening policy.
 
 ![Reviewed pre-cook input](docs/assets/salmon-pre-cook-input.jpeg)
+
+## Architecture at a Glance
+
+Read the three bands from top to bottom: Guard defines authority, the six
+agents own judgments, and the Go runtime schedules and persists execution.
+
+```mermaid
+%%{init: {"theme":"dark","themeVariables":{"fontSize":"22px","primaryTextColor":"#F8FAFC","lineColor":"#94A3B8","clusterBkg":"#111827","clusterBorder":"#475569","edgeLabelBackground":"#111827"},"flowchart":{"nodeSpacing":32,"rankSpacing":52,"htmlLabels":true,"curve":"basis"}}}%%
+flowchart TB
+    subgraph GUARD_BAND[" "]
+        direction TB
+        subgraph GUARD_ROW[" "]
+            direction LR
+            G["<span style='font-size:32px'><b>GUARD</b></span><br/><span style='font-size:20px'>governs every transition</span>"]
+            TP["<span style='font-size:24px'><b>Transition Policy</b></span><br/><span style='font-size:18px'>what may advance</span>"]
+            AE["<span style='font-size:24px'><b>Authority Envelope</b></span><br/><span style='font-size:18px'>what may be released</span>"]
+            G ==> TP ==> AE
+        end
+    end
+
+    subgraph AGENT_BAND[" "]
+        direction TB
+        subgraph AGENT_ROW[" "]
+            direction LR
+            LOOP["<span style='font-size:30px'><b>AGENTIC LOOP</b></span><br/><span style='font-size:20px'>six cognitive agents</span>"]
+            P["<span style='font-size:28px'><b>PERCEIVE</b></span><br/><span style='font-size:18px'>sense + separate</span>"]
+            C["<span style='font-size:28px'><b>CONNECT</b></span><br/><span style='font-size:18px'>resolve + assemble</span>"]
+            R["<span style='font-size:28px'><b>REASON</b></span><br/><span style='font-size:18px'>evaluate + propose</span>"]
+            V["<span style='font-size:28px'><b>REVIEW</b></span><br/><span style='font-size:18px'>human judgment</span>"]
+            A["<span style='font-size:28px'><b>ACT</b></span><br/><span style='font-size:18px'>bounded intervention</span>"]
+            L["<span style='font-size:28px'><b>LEARN</b></span><br/><span style='font-size:18px'>verify + retain</span>"]
+            LOOP ==> P ==> C ==> R ==> V
+            V ==>|<span style='font-size:18px'><b>ALLOW_BOUNDED</b></span>| A ==> L
+        end
+    end
+
+    subgraph GO_RUNTIME_BAND[" "]
+        direction TB
+        subgraph GO_RUNTIME_ROW[" "]
+            direction LR
+            LG["<span style='font-size:30px'><b>GO RUNTIME</b></span><br/><span style='font-size:20px'>state machine + SQLite</span>"]
+            N1["<span style='font-size:22px'><b>Capture Evidence</b></span><br/><span style='font-size:17px'>observations · unknowns · provenance</span>"]
+            N2["<span style='font-size:22px'><b>Assemble Event</b></span><br/><span style='font-size:17px'>ontology · entities · relationships</span>"]
+            N3["<span style='font-size:22px'><b>Evaluate Hypotheses</b></span><br/><span style='font-size:17px'>lexical RAG · MCP · citations</span>"]
+            N4["<span style='font-size:22px'><b>Human Interrupt</b></span><br/><span style='font-size:17px'>ASK · STOP · ALLOW_BOUNDED</span>"]
+            N5["<span style='font-size:22px'><b>Release Action</b></span><br/><span style='font-size:17px'>authorized guidance only</span>"]
+            N6["<span style='font-size:22px'><b>Record Outcome</b></span><br/><span style='font-size:17px'>result · policy effect · audit trace</span>"]
+            LG ==> N1 ==> N2 ==> N3 ==> N4
+            N4 ==>|<span style='font-size:17px'><b>ALLOW_BOUNDED</b></span>| N5 ==> N6
+        end
+    end
+
+    GUARD_BAND -. "control contract" .-> AGENT_BAND
+    AGENT_BAND == "agents own judgment · nodes schedule" ==> GO_RUNTIME_BAND
+
+    classDef agent fill:#0F3B57,stroke:#38BDF8,stroke-width:3px,color:#F8FAFC;
+    classDef artifact fill:#1F2937,stroke:#94A3B8,stroke-width:2px,color:#F8FAFC;
+    classDef bandLabel fill:#111827,stroke:#E0A800,stroke-width:4px,color:#F8FAFC;
+    classDef guard fill:#3F1D52,stroke:#C084FC,stroke-width:4px,color:#F8FAFC;
+    class P,C,R,V,A,L agent;
+    class N1,N2,N3,N4,N5,N6,TP,AE artifact;
+    class G guard;
+    class LOOP,LG bandLabel;
+    style GUARD_ROW fill:transparent,stroke:transparent
+    style AGENT_ROW fill:transparent,stroke:transparent
+    style GO_RUNTIME_ROW fill:transparent,stroke:transparent
+```
+
+The execution band is native Go, with SQLite checkpoints across CLI invocations.
+It runs no Python or LangGraph. The two saved boundaries are the Proof-1 human
+review pause and the Proof-2 adjudication before action; Proof-3 releases
+Act/Learn through the same Guard contract.
+
+### What “orthogonal” means here
+
+Orthogonal means a separate concern that applies across other components.
+The six agents perform the work: Perceive → Connect → Reason → Review → Act →
+Learn. Guard governs which transitions and actions may proceed throughout that
+sequence. It is not a seventh stage.
+
+The responsibilities are separate and interact through constraints: **agents
+perform work; Guard constrains what may proceed**. The runtime schedules and
+checkpoints that work. Python uses LangGraph; Go uses its native state machine.
+
+## Technology Stack and Rationale
+
+| Technology | Role in this demo | Why it was chosen |
+| --- | --- | --- |
+| Go 1.25+ | Typed agent contracts and compiled CLI/server runtime | Keeps ownership and failure paths visible in one executable, without a Python runtime dependency. |
+| Native Go state machine | Stage scheduling, adjudication and action release | Makes the transition logic explicit while keeping it separate from agent judgment. |
+| Pure-Go SQLite | Durable proof checkpoints and conditional phase claims | Allows normal process exits between proofs and blocks wrong-order, concurrent or repeated execution without a hosted database. |
+| Official MCP Go SDK over stdio | Separate client/server `search_knowledge` call | Proves the knowledge capability can be replaced behind a real protocol boundary. |
+| TF-IDF vectors and cosine ranking | Query-dependent retrieval over the reviewed corpus | Keeps the Go proof self-contained; this is lexical retrieval, with no claim of dense semantic equivalence. |
+| Embedded reviewed JSON corpus and SHA-256 content digests | Ranked chunks, citations and source text identity | Makes the exact evidence used by Reason and Act inspectable. Digests do not authenticate a malicious source. |
+| JSON run logs and `go test -race` | Detailed evidence and behavioral validation | Exposes run state, timings, MCP metadata, authority and replay protection without flooding the terminal. |
+
+## Why Python and Go
+
+Python keeps LangGraph orchestration and FastEmbed dense semantic retrieval
+close to their supported libraries. Go makes the same authority contracts
+inspectable in a compiled runtime, with native orchestration and self-contained
+lexical retrieval. Neither choice establishes a performance advantage here.
+The architectural proof is that evidence, human authority and bounded action
+retain their contracts when implementation choices change.
 
 ## Build and test
 
@@ -133,7 +244,7 @@ recovery for arbitrary external side effects or production approval identity.
 | Knowledge protocol | Official MCP Python SDK, stdio | Official MCP Go SDK, stdio subprocess |
 | Retrieval | FastEmbed dense semantic embeddings | Local TF-IDF sparse vectors and cosine ranking |
 | Evidence and authority | Reviewed fixture, ontology, Guard | Same fixture, ontology rules, decisions and authority requirements |
-| Audit | JSON and Markdown, node timing | JSON and Markdown, node timing |
+| Audit | JSON run logs, SQLite checkpoints, node/MCP timing | JSON run logs, SQLite checkpoints, node/MCP timing |
 
 The retrieval algorithm is an explicit difference: **Go does ranked lexical
 RAG, not dense semantic retrieval**. Scores and top chunks can differ from
@@ -145,7 +256,9 @@ retriever to add a different retrieval backend.
 
 LangGraph is a Python dependency, so the Go orchestration layer is a native
 state machine. It retains the separation between agent judgment and node
-scheduling. SQLite saves checkpoints between CLI invocations. Completion and refusal prevent replaying Act. An active claim interrupted by a crash is not automatically replayed.
+scheduling. SQLite saves checkpoints between CLI invocations. Completion and refusal
+prevent replaying Act. An active claim interrupted by a crash is not
+automatically replayed.
 This is a narrow architectural demo, with deterministic agent behavior and a
 reviewed perception fixture; it does not claim live vision, autonomous LLM
 reasoning, or production approval services.
