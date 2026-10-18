@@ -11,67 +11,9 @@ Agentic Salmon demonstrates how an agentic system moves from uncertain evidence 
 Read the three bands from top to bottom: Guard defines authority, the six
 agents own judgments, and the Go runtime schedules and persists execution.
 
-```mermaid
-%%{init: {"theme":"dark","themeVariables":{"fontSize":"30px","primaryTextColor":"#F8FAFC","lineColor":"#94A3B8","clusterBkg":"#111827","clusterBorder":"#475569","edgeLabelBackground":"#111827"},"flowchart":{"nodeSpacing":22,"rankSpacing":24,"padding":10,"wrappingWidth":180,"htmlLabels":true,"curve":"basis"}}}%%
-flowchart TB
-    subgraph GUARD_BAND[" "]
-        direction TB
-        subgraph GUARD_ROW[" "]
-            direction LR
-            G["<span style='font-size:40px'><b>GUARD</b></span><br/><span style='font-size:28px'>governs every<br/>transition</span>"]
-            TP["<span style='font-size:32px'><b>Transition<br/>Policy</b></span><br/><span style='font-size:26px'>what may<br/>advance</span>"]
-            AE["<span style='font-size:32px'><b>Authority<br/>Envelope</b></span><br/><span style='font-size:26px'>what may be<br/>released</span>"]
-            G ==> TP ==> AE
-        end
-    end
+![Architecture: Guard, six-agent loop, and native Go execution in three horizontal bands](docs/diagrams/architecture.png)
 
-    subgraph AGENT_BAND[" "]
-        direction TB
-        subgraph AGENT_ROW[" "]
-            direction LR
-            LOOP["<span style='font-size:38px'><b>AGENTIC<br/>LOOP</b></span><br/><span style='font-size:28px'>six cognitive<br/>agents</span>"]
-            P["<span style='font-size:36px'><b>PERCEIVE</b></span><br/><span style='font-size:26px'>sense +<br/>separate</span>"]
-            C["<span style='font-size:36px'><b>CONNECT</b></span><br/><span style='font-size:26px'>resolve +<br/>assemble</span>"]
-            R["<span style='font-size:36px'><b>REASON</b></span><br/><span style='font-size:26px'>evaluate +<br/>propose</span>"]
-            V["<span style='font-size:36px'><b>REVIEW</b></span><br/><span style='font-size:26px'>human<br/>judgment</span>"]
-            A["<span style='font-size:36px'><b>ACT</b></span><br/><span style='font-size:26px'>bounded<br/>intervention</span>"]
-            L["<span style='font-size:36px'><b>LEARN</b></span><br/><span style='font-size:26px'>verify +<br/>retain</span>"]
-            LOOP ==> P ==> C ==> R ==> V
-            V ==>|<span style='font-size:26px'><b>ALLOW_<br/>BOUNDED</b></span>| A ==> L
-        end
-    end
-
-    subgraph GO_RUNTIME_BAND[" "]
-        direction TB
-        subgraph GO_RUNTIME_ROW[" "]
-            direction LR
-            LG["<span style='font-size:38px'><b>GO<br/>RUNTIME</b></span><br/><span style='font-size:28px'>state machine<br/>+ SQLite</span>"]
-            N1["<span style='font-size:30px'><b>Capture<br/>Evidence</b></span><br/><span style='font-size:25px'>observations<br/>unknowns<br/>provenance</span>"]
-            N2["<span style='font-size:30px'><b>Assemble<br/>Event</b></span><br/><span style='font-size:25px'>ontology<br/>entities<br/>relationships</span>"]
-            N3["<span style='font-size:30px'><b>Evaluate<br/>Hypotheses</b></span><br/><span style='font-size:25px'>lexical RAG<br/>MCP · citations</span>"]
-            N4["<span style='font-size:30px'><b>Human<br/>Interrupt</b></span><br/><span style='font-size:25px'>ASK · STOP<br/>ALLOW_BOUNDED</span>"]
-            N5["<span style='font-size:30px'><b>Release<br/>Action</b></span><br/><span style='font-size:25px'>authorized<br/>guidance only</span>"]
-            N6["<span style='font-size:30px'><b>Record<br/>Outcome</b></span><br/><span style='font-size:25px'>result<br/>policy effect<br/>audit trace</span>"]
-            LG ==> N1 ==> N2 ==> N3 ==> N4
-            N4 ==>|<span style='font-size:25px'><b>ALLOW_<br/>BOUNDED</b></span>| N5 ==> N6
-        end
-    end
-
-    GUARD_BAND -. "control<br/>contract" .-> AGENT_BAND
-    AGENT_BAND == "agents own judgment<br/>nodes schedule" ==> GO_RUNTIME_BAND
-
-    classDef agent fill:#0F3B57,stroke:#38BDF8,stroke-width:3px,color:#F8FAFC;
-    classDef artifact fill:#1F2937,stroke:#94A3B8,stroke-width:2px,color:#F8FAFC;
-    classDef bandLabel fill:#111827,stroke:#E0A800,stroke-width:4px,color:#F8FAFC;
-    classDef guard fill:#3F1D52,stroke:#C084FC,stroke-width:4px,color:#F8FAFC;
-    class P,C,R,V,A,L agent;
-    class N1,N2,N3,N4,N5,N6,TP,AE artifact;
-    class G guard;
-    class LOOP,LG bandLabel;
-    style GUARD_ROW fill:transparent,stroke:transparent
-    style AGENT_ROW fill:transparent,stroke:transparent
-    style GO_RUNTIME_ROW fill:transparent,stroke:transparent
-```
+[Diagram source](docs/diagrams/architecture.mmd)
 
 The execution band is native Go, with SQLite checkpoints across CLI invocations.
 It runs no Python or LangGraph. The two saved boundaries are the Proof-1 human
@@ -115,68 +57,9 @@ outcome and preference evidence without weakening policy.
 
 One case moves from evidence to human approval to a controlled response. Approval gives permission to proceed; it does not resolve missing facts. Keep the same run ID throughout, even if you close the terminal between steps. Full details are in `log/<run-id>.log`.
 
-```mermaid
-%%{init: {"theme":"dark","themeVariables":{"fontSize":"22px","primaryTextColor":"#F8FAFC","lineColor":"#94A3B8","clusterBkg":"#111827","clusterBorder":"#475569","edgeLabelBackground":"#111827"},"flowchart":{"nodeSpacing":26,"rankSpacing":32,"htmlLabels":true,"curve":"basis"}}}%%
-flowchart TB
-    subgraph PROOF1_BAND[" "]
-        direction TB
-        subgraph PROOF1_ROW[" "]
-            direction LR
-            F1["<span style='font-size:30px'><b>PROOF-1</b></span><br/><span style='font-size:18px'>evidence + pause</span>"]
-            FC["<b>Perceive + Connect</b><br/><span style='font-size:18px'>reviewed input · ontology</span>"]
-            FR["<b>Reason</b><br/><span style='font-size:18px'>RAG through MCP · citations</span>"]
-            FP["<b>Save Review Pause</b><br/><span style='font-size:18px'>SQLite · no action</span>"]
-            F1 ==> FC ==> FR ==> FP
-        end
-    end
+![One run through three proofs: evidence pause, human approval or stop, then guarded action and learning](docs/diagrams/logic-flow.png)
 
-    subgraph PROOF2_BAND[" "]
-        direction TB
-        subgraph PROOF2_ROW[" "]
-            direction LR
-            F2["<span style='font-size:30px'><b>PROOF-2</b></span><br/><span style='font-size:18px'>HITL + adjudication</span>"]
-            FL["<b>Load Saved Pause</b><br/><span style='font-size:18px'>same run · same evidence</span>"]
-            FD{"<b>Human Decision</b>"}
-            FA["<b>Save Adjudication</b><br/><span style='font-size:18px'>bounded authority · no action</span>"]
-            FS["<b>TEST END — STOPPED</b><br/><span style='font-size:18px'>Act / Learn blocked</span>"]
-            F2 ==> FL ==> FD
-            FD ==>|APPROVE| FA
-            FD -->|STOP / Enter / EOF| FS
-        end
-    end
-
-    subgraph PROOF3_BAND[" "]
-        direction TB
-        subgraph PROOF3_ROW[" "]
-            direction LR
-            F3["<span style='font-size:30px'><b>PROOF-3</b></span><br/><span style='font-size:18px'>action + learning</span>"]
-            FG{"<b>Release Gate</b><br/><span style='font-size:18px'>Guard + saved run phase</span>"}
-            FX["<b>Act</b><br/><span style='font-size:18px'>bounded cited guidance</span>"]
-            FE["<b>Learn + TEST END</b><br/><span style='font-size:18px'>historical outcome · policy unchanged</span>"]
-            FB["<b>BLOCKED</b><br/><span style='font-size:18px'>wrong phase or repeat execution</span>"]
-            F3 ==> FG
-            FG ==>|yes| FX ==> FE
-            FG -->|no| FB
-        end
-    end
-
-    PROOF1_BAND == "saved review pause" ==> PROOF2_BAND
-    PROOF2_BAND == "saved APPROVE only" ==> PROOF3_BAND
-
-    classDef work fill:#0F3B57,stroke:#38BDF8,stroke-width:3px,color:#F8FAFC;
-    classDef saved fill:#1F2937,stroke:#E0A800,stroke-width:3px,color:#F8FAFC;
-    classDef bandLabel fill:#111827,stroke:#E0A800,stroke-width:4px,color:#F8FAFC;
-    classDef gate fill:#3F1D52,stroke:#C084FC,stroke-width:3px,color:#F8FAFC;
-    classDef stopped fill:#34202A,stroke:#F87171,stroke-width:2px,color:#F8FAFC;
-    class FC,FR,FL,FX,FE work;
-    class FP,FA saved;
-    class F1,F2,F3 bandLabel;
-    class FD,FG gate;
-    class FS,FB stopped;
-    style PROOF1_ROW fill:transparent,stroke:transparent
-    style PROOF2_ROW fill:transparent,stroke:transparent
-    style PROOF3_ROW fill:transparent,stroke:transparent
-```
+[Diagram source](docs/diagrams/logic-flow.mmd)
 
 1. **Proof-1 — Show the evidence and pause.**
 
