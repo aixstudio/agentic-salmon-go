@@ -1,0 +1,6 @@
+/bin/
+/traces/
+/coverage.out
+.DS_Store
+*.code-workspace
+.env

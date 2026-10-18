@@ -1,0 +1,57 @@
+{
+  "corpus_id": "agentic-salmon-reviewed-guidance-v1",
+  "embedding_model": "BAAI/bge-small-en-v1.5",
+  "sources": [
+    {
+      "source_id": "usda-air-fryer-safety",
+      "title": "Air Fryers and Food Safety",
+      "publisher": "USDA Food Safety and Inspection Service",
+      "url": "https://www.fsis.usda.gov/food-safety/safe-food-handling-and-preparation/food-safety-basics/air-fryers-and-food-safety",
+      "reviewed_at": "2026-08-13",
+      "chunks": [
+        {
+          "chunk_id": "usda-air-fryer-temperature",
+          "text": "Air-fryer time and temperature vary by appliance and food. Check food with a thermometer. USDA lists 145 degrees Fahrenheit as the safe minimum internal temperature for fish."
+        },
+        {
+          "chunk_id": "usda-air-fryer-circulation",
+          "text": "Do not overfill an air-fryer basket because restricted hot-air circulation can cause uneven cooking and undercooking. Cook larger amounts in batches."
+        }
+      ]
+    },
+    {
+      "source_id": "fda-seafood-safety",
+      "title": "Selecting and Serving Fresh and Frozen Seafood Safely",
+      "publisher": "U.S. Food and Drug Administration",
+      "url": "https://www.fda.gov/food/buy-store-serve-safe-food/selecting-and-serving-fresh-and-frozen-seafood-safely",
+      "reviewed_at": "2026-08-13",
+      "chunks": [
+        {
+          "chunk_id": "fda-seafood-cooking",
+          "text": "FDA says most seafood should reach an internal temperature of 145 degrees Fahrenheit. Visual texture may help assess doneness, but a thermometer supplies the temperature measurement."
+        },
+        {
+          "chunk_id": "fda-seafood-storage-unknown",
+          "text": "Frozen seafood can spoil if it thaws and remains warm too long. A photograph cannot recover an unknown cold-chain history or establish that frozen seafood stayed at a safe temperature."
+        }
+      ]
+    },
+    {
+      "source_id": "agentic-salmon-evidence-policy",
+      "title": "Agentic Salmon Evidence and Authority Policy",
+      "publisher": "aixstudio",
+      "url": "docs/adr/0001-controlled-workflow.md",
+      "reviewed_at": "2026-08-13",
+      "chunks": [
+        {
+          "chunk_id": "salmon-policy-image-limit",
+          "text": "Visible skin can support the hypothesis that the portions are fish, but an image without original packaging cannot verify species, ingredients, allergens, freshness, storage history, or food safety."
+        },
+        {
+          "chunk_id": "salmon-policy-authority",
+          "text": "Reason may propose bounded guidance while retaining unknown identity and cold-chain history. Act remains unavailable until a human explicitly accepts the uncertainty and authorizes the bounded response."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "provenance": "human-reviewed observations bound to the sanitized pre-cook input image",
+  "input_image_sha256": "3f0fe0b40048bb0d1053c373116f966771ef2a7ab556531c6e3727c4ee51a682",
+  "observations": [
+    {
+      "observation_id": "visible_portions",
+      "claim": "Two seasoned food portions are visible in a foil-lined air-fryer basket.",
+      "source": "human-reviewed fixture"
+    },
+    {
+      "observation_id": "visible_skin_like_surface",
+      "claim": "A skin-like surface is visible on at least one portion.",
+      "source": "human-reviewed fixture"
+    }
+  ],
+  "candidate_hypotheses": [
+    {
+      "hypothesis_id": "korean_spiced_soup_food",
+      "label": "Korean-spiced soup food",
+      "source_kind": "human_hypothesis",
+      "claim": "Joe initially wondered whether the unidentified frozen portions were a Korean-spiced food intended for soup.",
+      "supporting_observation_ids": []
+    },
+    {
+      "hypothesis_id": "fish",
+      "label": "fish",
+      "source_kind": "human_hypothesis",
+      "claim": "Seeing the skin-like surface shifted Joe's working hypothesis toward fish.",
+      "supporting_observation_ids": ["visible_skin_like_surface"]
+    },
+    {
+      "hypothesis_id": "salmon",
+      "label": "salmon",
+      "source_kind": "model_assertion",
+      "claim": "Claude previously asserted that the portions were likely seasoned, skin-on salmon; no label verified that assertion.",
+      "supporting_observation_ids": ["visible_skin_like_surface"]
+    }
+  ],
+  "entity_mentions": [
+    {
+      "mention_id": "visible_food_portions",
+      "entity_kind": "food_portion",
+      "label": "two visible seasoned food portions",
+      "evidence_claim": "Two seasoned food portions are visible."
+    },
+    {
+      "mention_id": "visible_air_fryer_basket",
+      "entity_kind": "cooking_equipment",
+      "label": "foil-lined air-fryer basket",
+      "evidence_claim": "The portions are arranged in a foil-lined air-fryer basket."
+    },
+    {
+      "mention_id": "portion_with_skin_like_surface",
+      "entity_kind": "food_portion",
+      "label": "portion with visible skin-like surface",
+      "evidence_claim": "A skin-like surface is visible on at least one portion."
+    },
+    {
+      "mention_id": "visible_skin_like_surface",
+      "entity_kind": "observable_feature",
+      "label": "visible skin-like surface",
+      "evidence_claim": "A skin-like surface is visible on at least one portion."
+    }
+  ],
+  "relationship_mentions": [
+    {
+      "subject_mention_id": "visible_food_portions",
+      "relation_kind": "located_in",
+      "object_mention_id": "visible_air_fryer_basket",
+      "evidence_claim": "The visible portions are located in the air-fryer basket."
+    },
+    {
+      "subject_mention_id": "portion_with_skin_like_surface",
+      "relation_kind": "has_visible_feature",
+      "object_mention_id": "visible_skin_like_surface",
+      "evidence_claim": "At least one visible portion has a visible skin-like surface."
+    }
+  ],
+  "unknowns": [
+    "verified food identity",
+    "marinade ingredients and allergens",
+    "storage and cold-chain history",
+    "odor after opening",
+    "freshness and food safety"
+  ]
+}

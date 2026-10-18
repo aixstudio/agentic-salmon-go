@@ -1,0 +1,31 @@
+name: ci
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.25.x'
+          cache: true
+      - name: Verify formatting
+        run: test -z "$(gofmt -l .)"
+      - name: Verify modules
+        run: go mod verify
+      - name: Vet
+        run: go vet ./...
+      - name: Race and contract tests
+        run: go test -race -coverprofile=coverage.out ./...
+      - name: Build
+        run: go build -o bin/agentic-salmon ./cmd/agentic-salmon
+      - name: Real stdio MCP demonstration
+        run: |
+          ./bin/agentic-salmon demo > /tmp/pending.json
+          ./bin/agentic-salmon demo --review allow-bounded --selected-hypothesis fish > /tmp/approved.json
+          jq -e '.status == "interrupted" and .guidance == null and (.events | length) == 3' /tmp/pending.json
+          jq -e '.status == "completed" and .decision == "allow_bounded" and (.events | length) == 6 and .events[2].evidence.knowledge.mcp_call.success == true and (.events[4].evidence.citation_chunk_ids | length) > 0' /tmp/approved.json
